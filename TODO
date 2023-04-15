@@ -1,0 +1,64 @@
+RELEASE PLAN (estimate)
+
+ver. 0.1.7 is done when
+* Implement function to update DB
+
+ver. 0.2.0 is done when
+* Implement querying Servers for status updates
+* update the values on our DB based of server info queries
+* make a main loop
+
+ver. 0.2.2 is done when
+* clean up db function names
+* make db updates thread safe
+
+ver. 0.2.5 is done when
+* Finalize the API
+* Write a generator for dmStatusQuery API
+* Write code for imgProvider
+// API IS DONE
+
+ver. 0.3.0 is done when
+* Write generator for Javascript functions to query the API
+* Write the static Javascript for the user interface
+// READY TO WRITE USER INTERFACE
+
+ver. 0.5.0 is done when
+* Make Render.header render the header from a header.json file
+* Render.body renders the full webapp
+* Render the app once on the server and serve it from memory
+// USER INTERFACE READY
+
+ver. 0.6.0 is done when
+* make the main loop forkIO for each server being tracked
+* make the query loop adaptible to the number of players on the server
+* e.g., servers with 0 players are queried less often than servers with 6
+
+ver. 0.7.0 is done when
+* finalize waiting-for-server-fill functionality in javascript
+
+ver. 0.7.5 is done when
+* make the graphics for the user interface
+* Store static assets in client cache
+
+ver. 0.8.0 is done when
+* implement efficient caching of static assets
+* deal with cache busting
+
+ver. 0.9.0 is done when
+* implement DM app logic in javascript
+* make the server keep track of queued players
+
+ver. 0.9.5 is done when
+* finalize the auto-queue functionality 
+
+ver. 1.0.0 is done when
+* Write tests
+* Write some documentation
+* Cleanup
+// app DONE AND READY FOR RELEASE
+
+ver. 1.x.x is done when
+* Accept Steam OpenID authentication
+* Make authentication JWT based
+* Use the Steam information to implement a more advanced queueing system

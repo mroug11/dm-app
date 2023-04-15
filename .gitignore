@@ -1,0 +1,6 @@
+dist-newstyle/
+static/images/
+static/jquery.js
+*.pem
+*.sqlite3
+serverlist.txt

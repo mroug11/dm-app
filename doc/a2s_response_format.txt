@@ -1,0 +1,37 @@
+Response format described in https://developer.valvesoftware.com/wiki/Server_queries
+
+\SOH = START OF HEADING, 0x1 in hex
+\DC1 = DEVICE CONTROL ONE, 0x11
+\DLE = DATA LINK ESCAPE, 0x10
+\CAN = CANCEL, 0x18
+\ETB = END OF TRANSMISSION BLOCK, 0x17
+
+Example response from UGC MGE server with descriptions:
+
+\255\255\255\255 						-- reponse is a single packet (-1) (long, 4 bytes)
+I	         						-- header byte, always equal to 'I' (0x49)
+\DC1								-- Protocol version used by the server, 1 byte.
+\SOH\SOH\SOH\SOH\SOH\SOH\SOH\SOH\SOH\SOH\SOH\SOH\SOH\SOH\SOH 	
+UGC.TF | MGE Mod | EU \226\150\136\226\150\136\226\150\136
+\226\150\136\226\150\136\226\150\136.\NUL 			-- server name, null terminated string
+mge_training_v8_beta4b\NUL 					-- map name, null terminated string
+tf\NUL 								-- name of the folder containing the game files, null terminated string
+\SOH\SOH* MGE Mod *\NUL 					-- full name of the game mode, null terminated string
+\184\SOH 							-- Steam Application ID of game. (440), (Short, 2 bytes)
+\DLE 								-- Number of players (\DLE = 0x10 = 16) (1 byte)
+\CAN								-- Max number of players (\CAN = 0x18 = 24) (1 byte)
+\NUL 								-- number of bots, 1 byte	
+d								-- Server type (d for dedicated), 1 byte
+l 								-- and environment (l for linux), 1 byte
+\NUL 								-- Server visibility (0 for public, 1 for private, NUL = 0), 1 byte
+\SOH 								-- VAC (0 for unsecured, 1 for secured, \SOH = 0x1 = 1), 1 byte
+7961495\NUL 							-- game version (null-terminated string)
+\177\135i\ETB\183\&0\NUL					-- Extra data flag?
+\NUL								-- --
+\NUL								-- --
+0								-- --
+\SOH\SOH							-- --
+1,1v1,1vs1,1x1,2v2,2vs2,alltalk,class,competitive,dm,
+duel,duels,mg,mge,mge_,mge_training_v8_beta4b,mgemod,
+mod,nocrits,training\NUL 					-- a null-terminated string of tags which describe the server
+\184\SOH\NUL\NUL\NUL\NUL\NUL\NUL" 				-- a longlong version of App ID, 8 bytes = 64 bits

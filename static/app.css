@@ -1,0 +1,319 @@
+body {
+    display: grid;
+    margin: 0; padding: 0;
+    height: 100%;
+    /*overflow-y: scroll;*/
+
+    grid-template-columns: 
+             [left-main-panel left-main-banner] 
+        22vw [left-settings]
+        20vw [right-settings left-main left-topic]
+        40vw [right-main right-topic]
+        auto [right-main-panel right-main-banner];
+    
+    grid-template-rows:
+             [top-main-banner]
+        25vh [bottom-main-banner top-main-panel]
+        auto [bottom-main-panel];
+    
+    grid-template-areas:
+        "left-banner settings topic right-banner"
+        "left-panel settings main right-panel";
+}
+
+#main-banner {
+    border-width: 0px; 
+    z-index: -1;
+
+    grid-row-start: top-main-banner;
+    grid-row-end: bottom-main-banner;
+
+    grid-column-start: left-main-banner;
+    grid-column-end: right-main-banner;
+
+    background: linear-gradient(
+                    180deg, 
+                    transparent, 
+                    90%,
+                    #fff 
+                ),
+
+                no-repeat scroll 0% 0% / 100% url(
+                    "images/1920px-Sky_hydro_01_gradient.png"
+                );
+
+    opacity: 0.43;
+}
+
+#main-banner:after {
+    z-index: 1; /* dont let opacity affect the text divs */
+}
+
+#main-panel {
+    border-width: 0px; 
+    z-index: -1;
+    
+    grid-row-start: top-main-panel;
+    grid-row-end: bottom-main-panel;
+
+    grid-column-start: left-main-panel;
+    grid-column-end: right-main-panel;
+
+    background-color: #fff;
+    /*background: linear-gradient(#fff, #e4e1da),
+                
+                repeat 0% 0% / 30% url(
+                    "images/concretewall002e_clean_small.jpg"
+                ) */;
+
+    opacity: 0.22;
+}
+
+#main-panel:after {
+    z-index: 1; /* dont let opacity affect the text divs */
+}
+
+#settings-column {
+    /*box-shadow: inset 0 1em 1.5em #311b0b60;*/
+    margin-top: -1vh; /* get rid of top box shadow */
+
+    grid-row-start: top-main-banner;    
+    grid-row-end: bottom-main-panel;
+
+    grid-column-start: left-settings;
+    grid-column-end: right-settings;
+
+    /*background: linear-gradient(
+                    180deg, 
+                    transparent 20%, 
+                    rgba(255, 255, 255, 1.6)
+                );*/
+    
+    overflow-wrap: break-word;
+}
+
+#main-cell {
+    /*background-color: gainsboro;
+    box-shadow: 0 3px 9px #333;
+    border-top: 1px solid #33333356;
+    padding-top: 1vh;
+    padding-left: 1vw;*/
+
+    grid-row-start: top-main-panel;
+    grid-row-end: bottom-main-panel;
+
+    grid-column-start: left-main;
+    grid-column-end: right-main;
+
+    padding-top: 2vh;
+    padding-left: 3vw;
+    padding-right: 3vw;
+    padding-bottom: 2vh;
+}
+
+#main-text-body {
+    padding-right: 2vw;
+    padding-left: 2vw;
+    padding-top: 1vh;
+    padding-bottom: 1vh;
+    border-left: 1px solid #e4e1da67;
+    border-right: 1px solid #e4e1da67;
+    
+    background-image: linear-gradient(transparent, #f0fff091, transparent);
+}
+
+#main-text-body > p {
+    font-family: sans-serif;
+    color: #222;
+}
+
+#server-status-container {
+    display: flex;
+    flex-flow: row wrap;
+    justify-content: center;
+    align-items: center;
+    align-content: center; /* reduce space between rows */
+    row-gap: 0em;
+    column-gap: 3em;
+    height: 100%;
+}
+
+.server-status {
+    flex: 1 1 230px;
+    max-width: 230px;
+}
+
+.server-status-info {
+    background-size:cover;
+    background-repeat: no-repeat;
+
+    height: 130px;
+    position: relative;
+
+    border-radius: 2px;
+
+    user-select: none;
+    cursor: pointer;
+}   
+
+.server-status-info > p {
+    position: absolute;
+    left: 1vw;
+
+    background-color: #080808b2;
+
+    text-transform: uppercase;
+    font-family: 'Courier New', Courier, monospace;
+    color: #ccc;
+}
+
+.server-status-info > time {
+    position: absolute;
+    left: 1vw;
+    top: 4em;
+
+    background-color: #000000b2;
+
+    text-transform: lowercase;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.8em;
+    color: #ccc;
+}
+
+.server-name-banner {
+    width: 100%;
+    text-align: center;
+}
+
+.server-name-banner > p {
+    margin: 0.5em 0 0.5em;
+    color: #222;
+    font-family: sans-serif;
+}
+
+#topic-cell {
+    grid-row-start: top-main-banner;
+    grid-row-end: bottom-main-banner;
+
+    grid-column-start: left-topic;
+    grid-column-end: right-topic;
+
+    padding-top: 6vh;
+    padding-left: 3vw;
+    padding-right: 4vw;
+
+    text-align: right;
+}
+
+.website-logo {
+    height: 28vh; 
+    /*background: no-repeat center center/40% url("aasds.png");*/
+}
+
+.website-title {
+    padding-left: 3vw;
+    padding-right: 3vw;
+}
+
+.settings { 
+    padding-left: 3vw;
+    padding-right: 3vw;
+    padding-top: 4vh;
+}
+
+.settings > legend, .settings label {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 1em;
+    text-shadow: 1px 1px #1111112a;
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
+}
+
+#settings-region-select {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 1em;
+}
+
+#settings-region-select button {
+    box-shadow: 0 1px 5px #311b0b60;
+    font-size: 1em;
+    padding-top: 1em;
+    padding-bottom: 1em;
+    margin-top: 0.5em;
+    width: 45%;
+    cursor: pointer;
+}
+
+#settings-queue-size datalist {
+    display: flex;
+    justify-content: space-between;
+}
+
+#settings-queue-size input {
+    margin-top: 1em;
+}
+
+.settings-join-behavior {
+    margin-left: 1vw;
+}
+
+.settings-join-behavior input {
+    margin-top: 1.2em;
+}
+
+h1, h2 {
+    margin: 0;  
+    color: #333;
+}
+
+h1 {
+    font-family: 'Crimson Text', serif; 
+    font-size: 3em;
+    text-transform: uppercase;
+}
+
+h2 {
+    font-family: Helvetica, sans-serif; 
+    font-size: 2.5em;
+    margin-bottom: 1em;
+}
+
+h3 {
+    font-family: 'Crimson Text', serif; 
+    font-size: 1.2em;
+    text-transform: capitalize;
+}
+
+h3 > a {
+    color: #999;
+    text-decoration: none;
+}
+
+h3 > a:hover, a:active {
+    color: #666;
+}
+
+p {
+    font-size: 1.0em;
+    line-height: 1.5;
+}
+
+input[type="range"] {
+    width: 100%;
+    accent-color: #333;
+}
+  
+hr {
+    margin-top: 2em;
+    margin-bottom: 2em;
+    border: none;
+    border-top: 3px double #333;
+    color: #333;
+}
+
+div { 
+    border: 0px solid; 
+}
+
+

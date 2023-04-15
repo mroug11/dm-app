@@ -1,0 +1,6 @@
+Fresh run: cabal new-clean; cabal run erehwn-net -- --config-file "app.conf"
+
+For testing HTTPS it's necessary to generate mock key/cert .pem files
+
+Serverlist format: region|name|address|port
+

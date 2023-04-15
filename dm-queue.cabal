@@ -1,0 +1,54 @@
+cabal-version:      2.4
+
+name:               dm-queue
+version:            0.3.7
+synopsis:           A web application to queue for TF2 DM servers
+description:        Continuously poll the status of all DM servers for a particular region. 
+                    Once a certain number of players have joined a server the user is queuing for, 
+                    alert the user and give them a steam:// URL that allows them to join.
+license:            BSD-3-Clause
+license-file:       LICENSE
+author:             mroug
+maintainer:         mroug78@gmail.com
+category:           Web, student project
+extra-doc-files:    CHANGELOG.md
+                  , README
+                  , TODO
+                 
+executable erehwn-net
+
+    main-is:          Main.hs
+    other-modules:    App
+                    , Api
+                    , Db
+                    , Render
+                    , SteamApi
+                    , Stream
+                    , Client
+                    , Settings
+
+    build-depends:    base >= 4.16 && < 5
+                    , text >= 1.2.5
+                    , bytestring
+                    , bytestring-conversion
+                    , time
+                    , directory
+                    , transformers
+                    , network
+                    , aeson
+                    , servant
+                    , servant-server
+                    , servant-js
+                    , servant-client
+                    , js-jquery
+                    , warp >= 3.3.25
+                    , warp-tls
+                    , persistent
+                    , persistent-template
+                    , persistent-sqlite
+                    , configuration-tools
+                    , lucid
+
+    hs-source-dirs:   app
+    default-language: Haskell2010
+    ghc-options:      -threaded
