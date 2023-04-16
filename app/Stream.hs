@@ -31,7 +31,7 @@ trackServer db addr port localport interval listen = do
     serverStatus <- getServerStatus addr port
     updated <- updateServer db addr port serverStatus
     
-    when (True) $ do -- or updated
+    when (or updated) $ do -- or updated
         reg <- getRegion db addr port -- tag the update
 
         let (ServerStatus mapName players capacity queue) = serverStatus

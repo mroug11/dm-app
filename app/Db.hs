@@ -148,4 +148,3 @@ updateServer dbPath address port (ServerStatus map players capacity queue) = run
     when (updates !! 3) $ do update id [ServerQueued =. queue]
 
     return updates
-

@@ -41,7 +41,7 @@ main = runWithConfiguration runtimeInfo $ \conf -> startServer conf
                 threadDelay (15000000 `div` length uniqueIds){--}
 
             -- send keepalive pings every 10 minutes
-            forkIO $ sendKeepAlive listenC (60000000*10)
+            --forkIO $ sendKeepAlive listenC (60000000*10)
 
             -- turn the api into callable JS functions
             --apiToJS api (_staticDir c)
@@ -55,7 +55,7 @@ main = runWithConfiguration runtimeInfo $ \conf -> startServer conf
             return (_staticDir c, _dbPath c, listenC) -- run options
 
         runServer c (static, db, listener) = do
-            let serverSettings = setHTTP2Disabled $ setServerName "" $ setPort (_port c) defaultSettings
+            let serverSettings = setTimeout (60*10) $ setServerName "" $ setPort (_port c) defaultSettings
             let appSettings = (app (static, db, listener))
 
             (if _isHttps c 

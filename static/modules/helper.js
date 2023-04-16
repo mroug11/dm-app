@@ -53,10 +53,10 @@ function updateStatusFromJSON(json, statusElem) {
         capacity.innerHTML = `/ ${json.capacity}`;
     }
 
-    let queued = statusInfo.getElementsByClassName("status-queue")[0];
-    if (json.queued || !queued.innerHTML) { 
-        LOG("updating queued: " + json.queued); 
-        queued.innerHTML = json.queued; 
+    let queue = statusInfo.getElementsByClassName("status-queue")[0];
+    if (json.queue || !queue.innerHTML) { 
+        LOG("updating queued: " + json.queue); 
+        queue.innerHTML = json.queue; 
     }
 }
 

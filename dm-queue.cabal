@@ -26,6 +26,7 @@ executable erehwn-net
                     , Stream
                     , Client
                     , Settings
+                    , Users
 
     build-depends:    base >= 4.16 && < 5
                     , text >= 1.2.5
@@ -48,6 +49,7 @@ executable erehwn-net
                     , persistent-sqlite
                     , configuration-tools
                     , lucid
+                    , containers
 
     hs-source-dirs:   app
     default-language: Haskell2010

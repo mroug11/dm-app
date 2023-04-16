@@ -6,7 +6,7 @@ import { listenUpdates } from "./modules/eventstream.js";
 let LOG = (...args) => {_log(true, ...args)}
 
 let controller = new AbortController();
-let evtSource = new EventSource("");
+let evtSource;
 
 window.addEventListener("DOMContentLoaded", function initPage(event) {
     if (!document.cookie) {
@@ -27,7 +27,7 @@ window.addEventListener("DOMContentLoaded", function initPage(event) {
     // render the regional server status page if
     if (window.location.search.split('=')[0] == "?region") {
         serverStatusPage(region());
-    }
+    } 
 
 });
 
@@ -84,29 +84,34 @@ function switchStatusPage (region) {
         return;
     }
 
-    _log(performance.getEntriesByType('navigation')[0].nextHopProtocol);
+    LOG("http protocol: ", performance.getEntriesByType('navigation')[0].nextHopProtocol);
     
     // render the new status page
     serverStatusPage(region);
 }
 
-const serverStatusPage = function(region) {
+const serverStatusPage = async function(region) {
     let promise = fetchServerPool(region);
-    promise.then(response => response.json()).then(json => {
-        LOG("promise got data ", json)
-        renderStatusPage(json);
-    }).catch(err => {
-        LOG("promise error: ", err)
-    })
+    promise.then(response => response.json())
+           .then(json => {
+                LOG("promise got data ", json)
+                renderStatusPage(json);
 
-    evtSource.close(); // abort the previous event stream
-    evtSource = listenUpdates(region); // listen for server status update events
+                // abort the previous event stream
+                if (evtSource) evtSource.close(); 
+
+                // listen for new server status update events
+                evtSource = listenUpdates(region); 
+            })
+            .catch(err => {
+                LOG("promise error: ", err)
+            })
 }
 
 function fetchServerPool(region) {
-    let pathname = '/api/status/' + region + '/pool';
-    let options  =  { headers: { 'Accept': 'application/json'
-                               , 'Content-Type': 'application/json'
+    let pathname = "/api/status/" + region + "/pool";
+    let options  =  { headers: { "Accept": "application/json"
+                               , "Content-Type": "application/json"
                                }
                     , method: "GET"
                     , cache: "no-cache"

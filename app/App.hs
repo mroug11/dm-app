@@ -18,33 +18,31 @@ import Servant
 import Servant.Types.SourceT (source)
 import Lucid (Html, source_)
 
-import Api (API, API', Region, regionToString, ServerUpdate(ServerUpdate, ServerUpdateKeepalive))
+import Api (API, API', Region, regionToString, ServerUpdate(ServerUpdate, ServerUpdateKeepalive), UserSettings(UserSettings), ServerSettings(ServerSettings))
 import qualified Db (getAllByRegion, Server, getAllByRegionParsed)
 import qualified Render (header, body)
 import qualified Data.ByteString as Render
 
 server :: FilePath -> FilePath -> Chan ServerUpdate -> Server API
-server db statics chan = status :<|> graphics
+server db statics chan = status :<|> (join :<|> renew) :<|> graphics
     where
+        join (UserSettings limit (ServerSettings serverlist)) = return True
+        renew = return True
+        
+        -- | Request correctly sized graphics 
+        graphics img width height = return "test"
+        
         -- | Query for server status
         status reg = pool reg :<|> stream reg
             where            
-                pool:: Region -> Handler [Db.Server]
-                pool reg = liftIO $ Db.getAllByRegion db (regionToString reg)
-
-                -- | Stream partial status updates for servers that are in Region reg
-                stream :: Region -> Handler (SourceIO ServerUpdate)
+                pool   reg = liftIO $ Db.getAllByRegion db (regionToString reg)
                 stream reg = liftIO $ do 
-                        dup <- dupChan chan
-                        contents <- getChanContents dup
-                        return $ source (ServerUpdateKeepalive "" : [c | c <- contents, matchRegion c (regionToString reg)])
+                          dup <- dupChan chan
+                          contents <- getChanContents dup
+                          return $ source [c | c <- contents, matchRegion c (regionToString reg)]
 
                     where matchRegion (ServerUpdateKeepalive _) _                      = True
                           matchRegion (ServerUpdate region _ _ _  _ _ _ ) clientRegion = region == clientRegion
-
-        -- | Request correctly sized graphics 
-        graphics :: String -> Maybe Int -> Maybe Int -> Handler String
-        graphics img width height = return "test"
         
 server' :: FilePath -> FilePath -> Chan ServerUpdate -> Server API'
 server' db  statics chan = server db statics chan :<|> (serveDirectoryWebApp statics :<|> (index :<|> dm )) 

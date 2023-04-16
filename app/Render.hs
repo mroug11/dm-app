@@ -152,7 +152,7 @@ settingsColumn = html_ $ do
                         option_ [value_ "9", label_ "9"] "9"
                         option_ [value_ "10", label_ "10"] "10"
                     br_ []
-                    label_ [for_ "queue-size"] "players are in queue"
+                    label_ [for_ "queue-size"] "players are in queue or server"
 
                 hr_ []
 

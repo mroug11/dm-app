@@ -1,5 +1,10 @@
 # Revision history for erehwn-net
 
+## 0.4.3
+
+* Users module handles clients joining, renewing and leaving the queue
+* database to keep track of all current users identified by browser token
+
 ## 0.4.0
 
 * serving server-rendered pages from memory for caching purposes
