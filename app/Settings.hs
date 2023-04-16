@@ -3,7 +3,7 @@
 
 module Settings ( runtimeInfo
                 , _dbPath, _serverlist, _staticDir, _port, _interleave
-                , _isHttps, _tlsOpts, _localport, _cert, _key ) where
+                , _isHttps, _tlsOpts, _localport, _cert, _key, _userdb ) where
 
 import Configuration.Utils
 import Control.Monad.IO.Class
@@ -14,6 +14,7 @@ runtimeInfo = programInfo "web server" pAppConf defaultAppConf
 defaultAppConf :: AppConf
 defaultAppConf = AppConf
     { _dbPath     = "db.sqlite3" 
+    , _userdb     = "userdb.sqlite3"
     , _serverlist = "serverlist.txt" 
     , _staticDir  = "static" 
     , _port       = 8080
@@ -31,6 +32,7 @@ defaultTlsOpts = TlsOpts
 
 data AppConf = AppConf
     { _dbPath :: FilePath
+    , _userdb :: FilePath
     , _serverlist :: FilePath
     , _staticDir :: FilePath
     , _port   :: Int
@@ -72,6 +74,8 @@ pTlsOpts = id
 
 dbPath :: Functor f => (String -> f String) -> AppConf -> f AppConf
 dbPath f s = (\u -> s { _dbPath = u }) <$> f (_dbPath s)
+userdb :: Functor f => (String -> f String) -> AppConf -> f AppConf
+userdb f s = (\u -> s { _userdb = u }) <$> f (_userdb s)
 localport :: Functor f => (Int -> f Int) -> AppConf -> f AppConf
 localport f s = (\u -> s { _localport = u }) <$> f (_localport s)
 serverlist :: Functor f => (String -> f String) -> AppConf -> f AppConf
@@ -91,6 +95,7 @@ instance FromJSON (AppConf -> AppConf) where
     parseJSON = withObject "AppConf" $ \o -> id
         <$< tlsOpts %.: "tlsOpts" % o
         <*< dbPath ..: "dbPath" % o
+        <*< userdb ..: "userdb" % o
         <*< serverlist ..: "serverlist" % o
         <*< staticDir ..: "staticDir" % o
         <*< port ..: "port" % o
@@ -101,7 +106,7 @@ instance FromJSON (AppConf -> AppConf) where
 instance ToJSON AppConf where
     toJSON a = object
         [ "tlsOpts" .= _tlsOpts a
-        , "dbPath" .= _dbPath a
+        , "userdb" .= _userdb a
         , "serverlist" .= _serverlist a
         , "staticDir" .= _staticDir a
         , "port" .= _port a
@@ -116,6 +121,9 @@ pAppConf = id
     <*< dbPath .:: strOption
         % long "dbPath"
         <> help "Path to the database file"
+    <*< userdb .:: strOption
+        % long "userdb"
+        <> help "Path to the users database file"
     <*< serverlist .:: strOption
         % long "serverlist"
         <> help "Path to a list of servers"

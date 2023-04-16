@@ -21,6 +21,7 @@ module Db ( initialize
           , getAllByRegion
           , getAllByRegionParsed
           , getRegion
+          , getAllPair
           , Server(Server)
           , Unique (UniqueServer)
           ) where
@@ -95,6 +96,14 @@ getAll dbPath = runSqlite (pack dbPath) $ do
     servers <- selectList [][] -- get all the IDs and values from the DB
     return (makeUnique servers) -- but return only their keys
     where makeUnique = map (\(Entity _ serv) -> UniqueServer (serverAddress serv) (serverPort serv)) 
+
+getAllPair :: FilePath -> IO [(String, String)]
+getAllPair db = runSqlite (pack db) $ do
+    servers <- selectList [][]
+    return $ go servers
+
+    where go ((Entity _ s):ss) = (serverAddress s, serverPort s) : go ss
+          go []                = []
 
 getRegion :: FilePath -> String -> String -> IO String
 getRegion db addr port = runSqlite (pack db) $ do

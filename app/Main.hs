@@ -18,8 +18,8 @@ import Render (apiToJS)
 import Settings
 import Stream (trackServer, sendKeepAlive, listener)
 import Api (ServerUpdate(ServerUpdate,ServerUpdateKeepalive))
-import Db (initialize, getAll, Unique(UniqueServer))
-import Data.Aeson.Key (toString)
+import Db (initialize, getAll, Unique(UniqueServer), getAllPair)
+import qualified Users (initialize)
 
 main :: IO () 
 main = runWithConfiguration runtimeInfo $ \conf -> startServer conf
@@ -30,6 +30,9 @@ main = runWithConfiguration runtimeInfo $ \conf -> startServer conf
             -- initialize the database
             Db.initialize (_serverlist c) (_dbPath c)
             uniqueIds <- getAll (_dbPath c)
+
+            -- initialize users database
+            Users.initialize (_userdb c) (Db.getAllPair (_dbPath c))
 
             -- create a stream source for server updates
             listenC <- Stream.listener

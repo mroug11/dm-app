@@ -10,7 +10,7 @@
 {-# LANGUAGE DataKinds                  #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE OverloadedStrings          #-}
-{-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE InstanceSigs               #-}
 
 module Users where
     
@@ -21,10 +21,10 @@ import           Data.Time (UTCTime, getCurrentTime, secondsToNominalDiffTime)
 import           Data.Time.Clock.POSIX
 import qualified Data.Map.Strict as M
 import qualified Data.Text as T
+import           System.Directory (doesFileExist)
 import           Control.Monad.IO.Class (liftIO)
-
-newtype SList = SList (String, Int) deriving (Show, Read, Eq)
-derivePersistField "SList"
+import           Control.Monad (unless)
+import Users (User(userServers))
 
 share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
 User
@@ -37,11 +37,22 @@ User
     deriving    Show
 |]
 
-migrateUsers db = runSqlite db $ runMigration migrateAll
+initialize db slist = do
+    file <- doesFileExist db
+    unless file $ migrateUsers db
+    let defaultServerList = zip (flatten slist) (repeat True)
 
-addUser db token = do
+    runSqlite (T.pack db) $ insert (User "default" (M.fromList defaultServerList) 0 False (posixSecondsToUTCTime 0))
+
+    where flatten ((a,b):xs) = T.pack (a ++ ":" ++ b) : flatten xs 
+          flatten []         = []
+
+migrateUsers db = runSqlite (T.pack db) $ runMigration migrateAll
+
+addUser db token = runSqlite db $ do
     t <- liftIO getCurrentTime
-    runSqlite db $ insert (User token M.empty 4 False t)
+    (Just (Entity _ def)) <- selectFirst[UserToken ==. "default"][]
+    insert (User token (userServers def) 4 False t)
 
 remUser db token = runSqlite db $ deleteBy (UniqueToken token)
 
@@ -55,11 +66,10 @@ renewUser db token = runSqlite db $ do
     user <- selectFirst [UserToken ==. token] []
     case user of 
         (Just (Entity userKey _)) -> do
-                    t <- liftIO getCurrentTime
-                    update userKey [UserLastRenew =. t]
-                    return True
-        Nothing ->  return False
-
+                   t <- liftIO getCurrentTime
+                   update userKey [UserLastRenew =. t]
+                   return True
+        Nothing -> return False
 
 readyToJoin db numPlayers (addr, port) = runSqlite db $ do
     users <- selectList [UserQueued ==. True, UserThreshold >=. numPlayers] []
