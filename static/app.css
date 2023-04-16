@@ -133,7 +133,7 @@ body {
     justify-content: center;
     align-items: center;
     align-content: center; /* reduce space between rows */
-    row-gap: 0em;
+    row-gap: 1em;
     column-gap: 3em;
     height: 100%;
 }
@@ -150,7 +150,7 @@ body {
     height: 130px;
     position: relative;
 
-    border-radius: 2px;
+    border-radius: 4px;
 
     user-select: none;
     cursor: pointer;
@@ -167,28 +167,53 @@ body {
     color: #ccc;
 }
 
-.server-status-info > time {
+.server-status-info >* {
     position: absolute;
-    left: 1vw;
-    top: 4em;
 
+    padding: 0.5em;
     background-color: #000000b2;
 
     text-transform: lowercase;
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 0.8em;
+    font-family:  'Quicksand', sans-serif;
+    font-size: 1em;
     color: #ccc;
+}
+
+.server-status-info time {
+    top: 1em;
+    left: 1vw;
+}
+
+.server-status-info .status-players {
+    top: 3.5em;
+    left: 1vw;
+    font-size: 1.3em;
+}
+
+.server-status-info .status-capacity {
+    top: 3.5em;
+    left: 3vw;
+    font-size: 1.3em;
+}
+
+.server-status-info .status-queue {
+    top: 5em;
+    right: 1vw;
 }
 
 .server-name-banner {
     width: 100%;
     text-align: center;
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
 }
 
-.server-name-banner > p {
+.server-name-banner > a {
     margin: 0.5em 0 0.5em;
     color: #222;
-    font-family: sans-serif;
+    font-family:  'Quicksand', sans-serif;
+    font-size: 1.2em;
+    text-decoration: none;
 }
 
 #topic-cell {
@@ -268,8 +293,8 @@ h1, h2 {
 }
 
 h1 {
-    font-family: 'Crimson Text', serif; 
-    font-size: 3em;
+    font-family: 'Quicksand', sans-serif; 
+    font-size: 2.5em;
     text-transform: uppercase;
 }
 
@@ -280,7 +305,7 @@ h2 {
 }
 
 h3 {
-    font-family: 'Crimson Text', serif; 
+    font-family: 'Quicksand', sans-serif;
     font-size: 1.2em;
     text-transform: capitalize;
 }

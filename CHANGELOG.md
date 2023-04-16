@@ -1,5 +1,10 @@
 # Revision history for erehwn-net
 
+## 0.4.0
+
+* serving server-rendered pages from memory for caching purposes
+* using client side rendering to render the status page
+
 ## 0.3.7
 
 * moved config-utils into its own module

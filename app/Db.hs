@@ -21,7 +21,7 @@ module Db ( initialize
           , getAllByRegion
           , getAllByRegionParsed
           , getRegion
-          , Server
+          , Server(Server)
           , Unique (UniqueServer)
           ) where
     

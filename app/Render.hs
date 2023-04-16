@@ -6,9 +6,8 @@
 
 module Render ( apiToJS
               , header
-              , body1
-              , body2
-              , HTML ) where
+              , body
+              ) where
     
 import Lucid
 import Servant
@@ -81,34 +80,39 @@ apiToJS api dir = do
     --putStrLn "writing jquery.js"
     --T.writeFile (dir ++ "/jquery.js") jquery
 
-header :: FilePath -> Html ()
-header static = html_ $ do
+header :: Html ()
+header = html_ $ do
     head_ $ do
         title_ "Deathmatch Auto-Queue"
+
         link_ [ rel_ "stylesheet"
               , type_ "text/css"
               , href_ "static/app.css"
               ]
 
-        with (script_ "") [ src_ "https://code.jquery.com/jquery-3.6.4.min.js"
-                          , type_ "text/javascript" 
-                          , integrity_ "sha256-oP6HI9z1XaZNBrJURtCoUT5SUnxFr8s3BzRl+cbzUq8="
-                          , crossorigin_ "anonymous"
-                          ]
+        link_ [ href_ "https://fonts.googleapis.com/css2?family=Quicksand:wght@300&display=swap" 
+              , rel_ "stylesheet"
+              ]
 
         with (script_ "") [ src_ "static/app.js"
                           , type_ "module" 
-                          , defer_ ""
                           ]
 
-staticPage :: Html ()
-staticPage = bannerArea <> settingsColumn <> panelBase
+body :: Html ()
+body = bannerArea <> settingsColumn <> main
 
-body1 :: Html ()
-body1 = staticPage <> panelIntro
-
-body2 :: [ServerStatus] -> Html ()
-body2 servers = staticPage <> panelStatus servers
+main :: Html ()
+main = html_ $ 
+    body_ $ do
+        div_ [id_ "main-panel"] ""
+        div_ [style_ "grid-area: right-panel"] ""
+        div_ [style_ "grid-area: left-panel"] ""
+        div_ [id_ "main-cell", style_ "grid-area: main"] $ do
+            div_ [id_ "main-text-body"] $ do
+                h2_ "Main page" 
+                p_ "The last few Team Fortress summer events have only been item updates. But this year, we're planning on shipping a full-on holiday-sized update — with items, maps, taunts, unusual effects, war paints, and other community-contributed fixes for the game! Which means we need Steam Workshop content! YOUR Steam Workshop content!"
+                p_ "So get to work! (Or back to work, if you were already working but got distracted when the entire internet simultaneously found out about this state-of-the-art blog-post.) Make sure to get your submissions into the Steam Workshop by May 1st, so they can be considered for this as-yet-unnamed, un-themed, but still very exciting summer-situated (but not summer-themed) (unless you wanted to develop summer-themed stuff) update."
+                p_ "So get to work! (Or back to work, if you were already working but got distracted when the entire internet simultaneously found out about this state-of-the-art blog-post.) Make sure to get your submissions into the Steam Workshop by May 1st, so they can be considered for this as-yet-unnamed, un-themed, but still very exciting summer-situated (but not summer-themed) (unless you wanted to develop summer-themed stuff) update."
 
 bannerArea :: Html ()
 bannerArea = html_ $ do
@@ -118,32 +122,7 @@ bannerArea = html_ $ do
         div_ [id_ "topic-cell", style_ "grid-area: topic"] $ do
             h3_ (a_ [href_ "/dm"] "Deathmatch Auto-Queue")
         div_ [style_ "grid-area: right-banner"] ""
-
-panelBase :: Html ()
-panelBase =  html_ $ 
-    body_ $ do
-        div_ [id_ "main-panel"] ""
-        div_ [style_ "grid-area: right-panel"] ""
-        div_ [style_ "grid-area: left-panel"] ""
-
-panelStatus :: [ServerStatus] -> Html ()
-panelStatus servers = 
-    div_ [id_ "main-cell", style_ "grid-area: main"] $ do 
-        div_ [id_ "server-status-container"] $ do 
-            list servers
-
-            where list []       = body_ ""
-                  list (s:serv) = toHtml s <> list serv
-
-panelIntro :: Html ()
-panelIntro = 
-    div_ [id_ "main-cell", style_ "grid-area: main"] $ do
-        div_ [id_ "main-text-body"] $ do
-            h2_ "Main page" 
-            p_ "The last few Team Fortress summer events have only been item updates. But this year, we're planning on shipping a full-on holiday-sized update — with items, maps, taunts, unusual effects, war paints, and other community-contributed fixes for the game! Which means we need Steam Workshop content! YOUR Steam Workshop content!"
-            p_ "So get to work! (Or back to work, if you were already working but got distracted when the entire internet simultaneously found out about this state-of-the-art blog-post.) Make sure to get your submissions into the Steam Workshop by May 1st, so they can be considered for this as-yet-unnamed, un-themed, but still very exciting summer-situated (but not summer-themed) (unless you wanted to develop summer-themed stuff) update."
-            p_ "So get to work! (Or back to work, if you were already working but got distracted when the entire internet simultaneously found out about this state-of-the-art blog-post.) Make sure to get your submissions into the Steam Workshop by May 1st, so they can be considered for this as-yet-unnamed, un-themed, but still very exciting summer-situated (but not summer-themed) (unless you wanted to develop summer-themed stuff) update."
-                                    
+                                
 settingsColumn :: Html ()
 settingsColumn = html_ $ do 
     body_ $ do
@@ -153,8 +132,8 @@ settingsColumn = html_ $ do
             div_ [class_ "settings"] $ do
                 legend_ "Search for servers in"
                 div_ [id_ "settings-region-select"] $ do
-                    button_ [type_ "button", name_ "eu", onclick_ "queryServerPool(\"eu\")"] "Europe"
-                    button_ [type_ "button", name_ "na", onclick_ "queryServerPool(\"na\")"] "North America"
+                    button_ [type_ "button", name_ "eu"] "Europe"
+                    button_ [type_ "button", name_ "na"] "North America"
 
                 hr_ []
 

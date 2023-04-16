@@ -1,5 +1,5 @@
 dist-newstyle/
-static/images/
+static/images/*
 static/jquery.js
 *.pem
 *.sqlite3
