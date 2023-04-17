@@ -11,7 +11,7 @@ import Network.Wai.Handler.WarpTLS as WarpTLS (runTLS, tlsSettings, TLSSettings)
 import Network.Socket
 import Control.Exception as E
 
-import App (api, app)
+import App (api, app, Opts(Opts))
 import Render (apiToJS)
 import Settings
 import Stream (trackServer, sendKeepAlive, listener)
@@ -38,7 +38,8 @@ main = runWithConfiguration runtimeInfo $ \conf -> startServer conf
             -- start a tracker per each server in a new user thread, spaced by linear intervals
             forM_ uniqueIds $ \(Db.UniqueServer addr port) -> do
                 trackC <- dupChan listenC
-                forkIO $ trackServer (_dbPath c) addr port (show $ _localport c) 15000000 trackC -- track a server in 15 second intervals
+                -- track a server in 15 second intervals
+                forkIO $ trackServer (_dbPath c) addr port (show $ _localport c) 15000000 trackC 
                 threadDelay (15000000 `div` length uniqueIds){--}
 
             -- send keepalive pings every 10 minutes
@@ -53,11 +54,12 @@ main = runWithConfiguration runtimeInfo $ \conf -> startServer conf
             --sock <- socket (addrFamily addr) (addrSocketType addr) (addrProtocol addr)
             --bind sock (addrAddress addr)
 
-            return (_staticDir c, _dbPath c, listenC) -- run options
+            -- run options
+            return $ Opts (_staticDir c) (_dbPath c) (_userdb c) listenC
 
-        runServer c (static, db, listener) = do
+        runServer c runOpts = do
             let serverSettings = setTimeout (60*10) $ setServerName "" $ setPort (_port c) defaultSettings
-            let appSettings = app (static, db, listener)
+            let appSettings = app runOpts
 
             (if _isHttps c 
                 then WarpTLS.runTLS (tlsSettings (_cert . _tlsOpts $ c) (_key . _tlsOpts $ c)) 

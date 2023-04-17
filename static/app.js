@@ -2,6 +2,7 @@ export { switchStatusPage }
 
 import { _log, updateStatusFromJSON } from "./modules/helper.js";
 import { listenUpdates } from "./modules/eventstream.js";
+import { sendRequest } from "./modules/queue.js";
 
 let LOG = (...args) => {_log(true, ...args)}
 
@@ -11,11 +12,11 @@ let evtSource;
 window.addEventListener("DOMContentLoaded", function initPage(event) {
     if (!document.cookie) {
         const id = Math.random().toString(36).substr(2, 9);
-        document.cookie="token=" + id + ";max-age=86400;path=/dm";
-        document.cookie="size=6";
-        document.cookie="confirm=true";
-        document.cookie="servers=";
-        document.cookie="queued=false";
+        document.cookie="token=" + id + ";max-age=86400";
+        //document.cookie="size=6";
+        //document.cookie="confirm=true";
+        //document.cookie="servers=";
+        //document.cookie="queued=false";
     } else {
         // read settings values from browser cookies
         restoreState();
@@ -23,6 +24,8 @@ window.addEventListener("DOMContentLoaded", function initPage(event) {
 
     // add input listeners
     listenInput();
+
+    sendRequest();
 
     // render the regional server status page if
     if (window.location.search.split('=')[0] == "?region") {
@@ -50,7 +53,7 @@ function restoreState () {
     }
 
     // restore queue size
-    document.querySelector("div#settings-queue-size input[name='queue_size']").value = cookieVal("size");
+    //document.querySelector("div#settings-queue-size input[name='queue_size']").value = cookieVal("size");
 
     // restore join behavior // can't be done properly on load/DOMContentLoaded listener?
     /*var confirm = !!getCkiVal("confirmJoin");

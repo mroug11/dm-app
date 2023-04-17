@@ -1,6 +1,11 @@
 # Revision history for erehwn-net
 
-## 0.4.3
+## 0.4.5 -- 2023-04-17
+
+* user post to join and renew queue status works
+* added error checking to user database methods
+
+## 0.4.3 -- 2023-04-16
 
 * Users module handles clients joining, renewing and leaving the queue
 * database to keep track of all current users identified by browser token

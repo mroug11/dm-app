@@ -11,6 +11,7 @@
 
 module App ( api
            , app
+           , Opts(Opts)
            , ServerUpdate(ServerUpdate,ServerUpdateKeepalive)
            , Region
            ) where
@@ -20,7 +21,7 @@ import           Servant.API
 import           Servant.Types.SourceT (source)
 import           Data.Aeson
 import           Data.ByteString.Builder    as B
-import qualified Data.Text                  as T (Text, unpack)
+import qualified Data.Text                  as T (Text,unpack,dropWhile,take,drop)
 import           Data.Data (Proxy(Proxy))
 import           GHC.Generics
 import           System.IO (readFile)
@@ -31,19 +32,30 @@ import           Lucid (Html, source_)
 
 import qualified Db (getAllByRegion, Server(Server), getAllByRegionParsed)
 import qualified Render (header, body, HTML)
+import qualified Users as U
+
+data Opts = Opts { static     :: FilePath
+                 , serverdb   :: FilePath
+                 , userdb     :: FilePath
+                 , serverchan :: Chan ServerUpdate
+                 }
 
 {-| The application is made up of static file-serving endpoints
     and a public API that can be queried for JSON formatted data
     about the status of the DM servers, the status of the queue,
     and allows the users to join and renew their place in the queue.
 -}
-app (statics, db, chan) = serve api' (server' db statics chan)
+app runOpts = serve api' (server' runOpts)
 
-server :: FilePath -> FilePath -> Chan ServerUpdate -> Server API
-server db statics chan = status :<|> (join :<|> renew) :<|> graphics
-    where
-        join (UserSettings limit (ServerSettings serverlist)) = return True
-        renew = return True
+server opts = status :<|> (join :<|> renew) :<|> graphics
+    where 
+        join _ Nothing = return False
+        join (UserSettings slist threshold queued) (Just c) = if queued
+            then liftIO $ do U.addUserWithSList (userdb opts) (parseCookie c) slist
+            else liftIO $ do U.remUserFromQueue (userdb opts) (parseCookie c)
+
+        renew Nothing  = return False
+        renew (Just c) = liftIO $ do U.renewUser (userdb opts) (parseCookie c)
         
         -- | Request correctly sized graphics 
         graphics img width height = return "test"
@@ -51,35 +63,32 @@ server db statics chan = status :<|> (join :<|> renew) :<|> graphics
         -- | Query for server status
         status reg = pool reg :<|> stream reg
             where            
-                pool   reg = liftIO $ Db.getAllByRegion db (regionToString reg)
+                pool reg = liftIO $ Db.getAllByRegion (serverdb opts) (regionToString reg)
+
                 stream reg = liftIO $ do 
-                          dup <- dupChan chan
+                          dup <- dupChan (serverchan opts)
                           contents <- getChanContents dup
                           return $ source [c | c <- contents, matchRegion c (regionToString reg)]
 
                     where matchRegion (ServerUpdateKeepalive _) _                      = True
                           matchRegion (ServerUpdate region _ _ _  _ _ _ ) clientRegion = region == clientRegion
-        
-server' :: FilePath -> FilePath -> Chan ServerUpdate -> Server API'
-server' db  statics chan = server db statics chan :<|> (serveDirectoryWebApp statics :<|> (index :<|> dm )) 
-    where -- Render app server-side to memory once during startup
-        index :: Handler String -- | Serve the static front page
-        index = liftIO $ readFile $ statics ++ "/index.html"
 
-        -- TODO: render the app differently for other devices (pc vs tablet vs phone),
-        -- or maybe per the user clients request.
+server' opts = server opts :<|> (serveDirectoryWebApp (static opts) :<|> (index :<|> dm )) 
+    where
+         -- | Serve the static front page
+        index = liftIO $ readFile $ static opts ++ "/index.html"
+
         -- | Send a cacheable web app which provides an interface to query DmServers DB.
-        dm :: Maybe Region -> Handler (Html ())
         dm _ = return $ Render.header <> Render.body
 
 {-| API is split into two parts, the static file-server and the public interface
     for querying server databases and joining and renewing the queue status, so 
     that we can generate Javascript for the public API part automatically.
 -}
-api :: Proxy API
-api = Proxy
+api  :: Proxy API
+api   = Proxy
 api' :: Proxy API'
-api' = Proxy
+api'  = Proxy
 
 type API  = ApiEndpoint
 type API' = API :<|> (Static :<|> RootEndpoint)
@@ -93,8 +102,8 @@ type ApiEndpoint = "api" :> -- | Public API endpoint
     
     :<|> "queue" :> -- | Join the queue, renew/get the clients queue status
          (
-              "join" :> ReqBody '[JSON] UserSettings :> Post '[PlainText] Bool
-         :<|> "renew" :> Get '[PlainText] Bool
+              "join" :> ReqBody '[JSON] UserSettings :> Header "Cookie" String :> Post '[PlainText] Bool
+         :<|> "renew" :> Header "Cookie" String :> Post '[PlainText] Bool
          )
                             
     :<|> "graphics" :> -- | Get correctly sized graphics
@@ -191,15 +200,18 @@ regionToString reg =
 
 {-| UserSettings are sent by the client when they join the queue, or update
     their queueing preferences. Settings contain the number of players the 
-    user wants to play with, and a list of (addr,port) server-identifying
-    tuples that the user is queueing to.
+    user wants to play with ('threshold'), and a list of (addr:port) 
+    server-identifying strings that the user is queueing to.
 -}
-data    UserSettings   = UserSettings Int ServerSettings deriving Generic
-newtype ServerSettings = ServerSettings [(String, Int)] deriving Generic
+data UserSettings = UserSettings {servers :: [T.Text], threshold :: Int, inqueue :: Bool} 
+    deriving (Generic, Show)
 
-instance FromJSON ServerSettings
 instance FromJSON UserSettings
-    
+
+-- Make bool lowercase for JS to process
 instance MimeRender PlainText Bool where 
-    mimeRender _ True  = "true" -- Make bool lowercase for JS to process
+    mimeRender _ True  = "true" 
     mimeRender _ False = "false"
+
+-- | Get the user token from a cookie
+parseCookie = take 9 . drop 1 .  dropWhile (/= '=')

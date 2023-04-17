@@ -1,12 +1,6 @@
 
 module Stream ( listener, trackServer, sendKeepAlive ) where
 
---import System.IO
---import Control.Concurrent (forkIO)
---import Network.Socket
---import Network.Socket.ByteString (recv, sendAll)
---import qualified Data.ByteString as B
---import qualified Control.Exception as E
 import Control.Monad
 import Control.Concurrent.Chan
 import Control.Concurrent (threadDelay)
@@ -53,59 +47,3 @@ sendKeepAlive chan delay = do
     threadDelay delay
     writeChan chan (ServerUpdateKeepalive "")
     sendKeepAlive chan delay
-
-{-
-update :: HostName ->     -- ^ Address
-          String ->       -- ^ Port
-          B.ByteString -> -- ^ Message
-          IO Bool         -- ^ Status
-update host port msg = withSocketsDo $ do
-    let hints = defaultHints { addrSocketType = Stream }
-    (addr:_) <- getAddrInfo (Just hints) (Just host) (Just port) 
-    E.bracketOnError (openSocket addr) (\s -> close s >> return False) (\s -> do 
-        E.catch (sendUpdate s addr msg) (\e -> do 
-            let err = show (e :: E.IOException)
-            return False))
-
-    where sendUpdate s addr msg = do
-            connect s (addrAddress addr) 
-            sendAll s msg
-            close s
-            return True
--}
-
-{-
-listener :: String ->   -- ^ localport
-            Int ->      -- ^ maximum number of queued connections
-            IO Socket
-listener port n = withSocketsDo $ do
-    addr:_ <- getAddrInfo Nothing Nothing (Just port) --use loopback
-    s <- open addr
-    print s
-    stype <- getSocketType s
-    print stype
-    sname <- getSocketName s
-    print sname
-    return s
-
-    {-E.catch (open addr) (\e -> do 
-            let err = show (e :: E.IOException)
-            print err
-            return stderr)
--}
-    where
-        open addr = do
-            s <- openSocket addr
-            bind s $ addrAddress addr
-            listen s n
-            return s
-
-        loop s = do
-            (_conn, address) <- accept s
-            msg <- recv _conn 512
-            print msg
-            loop s
-
--}
-
-
