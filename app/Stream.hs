@@ -12,7 +12,7 @@ import Control.Concurrent.Chan
 import Control.Concurrent (threadDelay)
 
 import Db (updateServer, getRegion)
-import Api (ServerUpdate(ServerUpdate,ServerUpdateKeepalive))
+import App (ServerUpdate(ServerUpdate,ServerUpdateKeepalive))
 import SteamApi (getServerStatus, ServerStatus(ServerStatus))
 
 listener :: IO (Chan ServerUpdate)

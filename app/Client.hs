@@ -10,7 +10,7 @@ import Servant.API
 import Servant.Client
 import qualified Servant.Client.Streaming as S
 
-import Api (Region, ServerUpdate)
+import App (Region, ServerUpdate)
 import Db (Server)
 
 -- | Target specific parts of the API

@@ -26,6 +26,9 @@ module Db ( initialize
           , Unique (UniqueServer)
           ) where
     
+import Database.Persist
+import Database.Persist.Sqlite
+import Database.Persist.TH
 import System.Directory (doesFileExist)
 import System.IO (openFile, hGetContents, IOMode (ReadMode))
 import GHC.Generics
@@ -34,9 +37,6 @@ import Control.Monad.IO.Class (liftIO)
 import Data.Text (Text, pack)
 import Data.Time (UTCTime, getCurrentTime, utctDayTime)
 import Data.Time.Format (formatTime, defaultTimeLocale)
-import Database.Persist
-import Database.Persist.Sqlite
-import Database.Persist.TH
 
 import SteamApi (ServerStatus (ServerStatus, ServerStatusLong))
 import Control.Monad.Trans.Reader

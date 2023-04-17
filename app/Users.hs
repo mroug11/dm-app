@@ -17,14 +17,13 @@ module Users where
 import           Database.Persist
 import           Database.Persist.Sqlite
 import           Database.Persist.TH
-import           Data.Time (UTCTime, getCurrentTime, secondsToNominalDiffTime)
+import           Data.Time              (UTCTime, getCurrentTime, secondsToNominalDiffTime)
 import           Data.Time.Clock.POSIX
 import qualified Data.Map.Strict as M
 import qualified Data.Text as T
-import           System.Directory (doesFileExist)
+import           System.Directory       (doesFileExist)
 import           Control.Monad.IO.Class (liftIO)
-import           Control.Monad (unless)
-import Users (User(userServers))
+import           Control.Monad          (unless)
 
 share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
 User
@@ -40,7 +39,7 @@ User
 initialize db slist = do
     file <- doesFileExist db
     unless file $ migrateUsers db
-    let defaultServerList = zip (flatten slist) (repeat True)
+    let defaultServerList = zip (flatten slist) (repeat False)
 
     runSqlite (T.pack db) $ insert (User "default" (M.fromList defaultServerList) 0 False (posixSecondsToUTCTime 0))
 

@@ -7,6 +7,7 @@
 module Render ( apiToJS
               , header
               , body
+              , HTML
               ) where
     
 import Lucid
@@ -17,9 +18,19 @@ import qualified Data.Text as T
 import qualified Data.Text.IO as T (writeFile, readFile)
 import Data.ByteString.Lazy.Char8 as C8 (pack, unpack)
 
-import Api (HTML, Region)
-import Client (statusPool)
 import SteamApi (ServerStatus(ServerStatusLong))
+
+data HTML
+
+instance Accept HTML where
+    contentType _ = "text/html"
+
+-- | Rendering pages for Servant
+instance MimeRender HTML String where -- render raw from a file
+    mimeRender _ = C8.pack
+
+instance MimeRender HTML (Html ()) where -- render from Lucid HTML
+    mimeRender _ = renderBS
 
 instance ToHtml ServerStatus where
     toHtml (ServerStatusLong addr port name map players capacity queued started) = do
@@ -61,15 +72,6 @@ mapNameToGraphic "cp_villa_b19"         = "230x130px-Villa_compressed.jpg"
 mapNameToGraphic "cp_freight_final1"    = "230x130px-Freight_compressed.jpg"
 mapNameToGraphic s                      = s
 
-instance Accept HTML where
-    contentType _ = "text/html"
-
--- | Rendering pages for Servant
-instance MimeRender HTML String where -- render raw from a file
-    mimeRender _ = C8.pack
-
-instance MimeRender HTML (Html ()) where -- render from Lucid HTML
-    mimeRender _ = renderBS
 
 -- | Generate jquery.js and Javascript from the API type to dir
 apiToJS api dir = do

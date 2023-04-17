@@ -1,6 +1,4 @@
-{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# HLINT ignore "Redundant bracket" #-}
 
 module Main where
 
@@ -17,14 +15,13 @@ import App (api, app)
 import Render (apiToJS)
 import Settings
 import Stream (trackServer, sendKeepAlive, listener)
-import Api (ServerUpdate(ServerUpdate,ServerUpdateKeepalive))
 import Db (initialize, getAll, Unique(UniqueServer), getAllPair)
 import qualified Users (initialize)
 
 main :: IO () 
 main = runWithConfiguration runtimeInfo $ \conf -> startServer conf
     where 
-        startServer c = E.bracket (initialize c) ({-TODO-}return) (runServer c)
+        startServer c = E.bracket (initialize c) {-TODO-}return (runServer c)
     
         initialize c = do
             -- initialize the database
@@ -32,7 +29,8 @@ main = runWithConfiguration runtimeInfo $ \conf -> startServer conf
             uniqueIds <- getAll (_dbPath c)
 
             -- initialize users database
-            Users.initialize (_userdb c) (Db.getAllPair (_dbPath c))
+            serverPairs <- Db.getAllPair (_dbPath c)
+            Users.initialize (_userdb c) serverPairs
 
             -- create a stream source for server updates
             listenC <- Stream.listener
@@ -59,7 +57,7 @@ main = runWithConfiguration runtimeInfo $ \conf -> startServer conf
 
         runServer c (static, db, listener) = do
             let serverSettings = setTimeout (60*10) $ setServerName "" $ setPort (_port c) defaultSettings
-            let appSettings = (app (static, db, listener))
+            let appSettings = app (static, db, listener)
 
             (if _isHttps c 
                 then WarpTLS.runTLS (tlsSettings (_cert . _tlsOpts $ c) (_key . _tlsOpts $ c)) 
