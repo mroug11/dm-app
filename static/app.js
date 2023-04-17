@@ -126,8 +126,8 @@ function fetchServerPool(region) {
 function renderStatusPage (json) {
     LOG("rendering status page with ", json)
 
-    const main = document.getElementById("main-cell");
-    main.innerHTML = "";
+    const main = document.getElementById("main-cell-bottom");
+    document.getElementById("main-text-body").innerHTML = "";
 
     const statusContainer = document.createElement('div');
     statusContainer.id = "server-status-container";

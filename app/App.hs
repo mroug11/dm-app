@@ -31,7 +31,7 @@ import           Control.Monad.IO.Class (liftIO)
 import           Lucid (Html, source_)
 
 import qualified Db (getAllByRegion, Server(Server), getAllByRegionParsed)
-import qualified Render (header, body, HTML)
+import qualified Render (header, banner, main, status, HTML)
 import qualified Users as U
 
 data Opts = Opts { static     :: FilePath
@@ -47,12 +47,14 @@ data Opts = Opts { static     :: FilePath
 -}
 app runOpts = serve api' (server' runOpts)
 
-server opts = status :<|> (join :<|> renew) :<|> graphics
+server opts = status :<|> (join :<|> leave :<|> renew) :<|> graphics
     where 
         join _ Nothing = return False
-        join (UserSettings slist threshold queued) (Just c) = if queued
-            then liftIO $ do U.addUserWithSList (userdb opts) (parseCookie c) slist
-            else liftIO $ do U.remUserFromQueue (userdb opts) (parseCookie c)
+        join (UserSettings slist threshold queued) (Just c) = liftIO $ do 
+            U.addUserWithSList (userdb opts) (parseCookie c) slist threshold
+
+        leave Nothing  = return False
+        leave (Just c) = liftIO $ do U.remUserFromQueue (userdb opts) (parseCookie c)
 
         renew Nothing  = return False
         renew (Just c) = liftIO $ do U.renewUser (userdb opts) (parseCookie c)
@@ -79,7 +81,8 @@ server' opts = server opts :<|> (serveDirectoryWebApp (static opts) :<|> (index 
         index = liftIO $ readFile $ static opts ++ "/index.html"
 
         -- | Send a cacheable web app which provides an interface to query DmServers DB.
-        dm _ = return $ Render.header <> Render.body
+        dm (Just _) = return $ Render.header <> Render.banner <> Render.status
+        dm Nothing  = return $ Render.header <> Render.banner <> Render.main
 
 {-| API is split into two parts, the static file-server and the public interface
     for querying server databases and joining and renewing the queue status, so 
@@ -102,7 +105,8 @@ type ApiEndpoint = "api" :> -- | Public API endpoint
     
     :<|> "queue" :> -- | Join the queue, renew/get the clients queue status
          (
-              "join" :> ReqBody '[JSON] UserSettings :> Header "Cookie" String :> Post '[PlainText] Bool
+              "join"  :> ReqBody '[JSON] UserSettings :> Header "Cookie" String :> Post '[PlainText] Bool
+         :<|> "leave" :> Header "Cookie" String :> Post '[PlainText] Bool
          :<|> "renew" :> Header "Cookie" String :> Post '[PlainText] Bool
          )
                             

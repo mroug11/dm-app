@@ -36,11 +36,11 @@ main = runWithConfiguration runtimeInfo $ \conf -> startServer conf
             listenC <- Stream.listener
 
             -- start a tracker per each server in a new user thread, spaced by linear intervals
-            forM_ uniqueIds $ \(Db.UniqueServer addr port) -> do
+            {-forM_ uniqueIds $ \(Db.UniqueServer addr port) -> do
                 trackC <- dupChan listenC
                 -- track a server in 15 second intervals
                 forkIO $ trackServer (_dbPath c) addr port (show $ _localport c) 15000000 trackC 
-                threadDelay (15000000 `div` length uniqueIds){--}
+                threadDelay (15000000 `div` length uniqueIds)-}
 
             -- send keepalive pings every 10 minutes
             --forkIO $ sendKeepAlive listenC (60000000*10)

@@ -67,34 +67,37 @@ addUser db token = runSqlite db $ do
                 UserKey k -> return True
                 _         -> return False
     
-addUserWithSList db token slist = runSqlite (T.pack db) $ do
+addUserWithSList db token slist threshold = runSqlite (T.pack db) $ do
     t <- liftIO getCurrentTime
     user <- selectFirst[UserToken ==. token][]
 
     result <- case user of 
                 (Just (Entity key usr)) -> do
-                    update key [UserServers =. slUpdate slist (userServers usr), UserQueued =. True]
+                    update key [ UserServers   =. slUpdate slist (userServers usr)
+                               , UserQueued    =. True
+                               , UserThreshold =. threshold
+                               ]
                     return key
 
                 Nothing -> do
                     (Just (Entity _ def)) <- selectFirst[UserToken ==. "default"][]
-                    insert (User token (slUpdate slist (userServers def)) 4 True t)
+                    insert (User token (slUpdate slist (userServers def)) threshold True t)
 
     case result of
         UserKey k -> return True
         _         -> return False
     
-        where slUpdate (s:ss) m = M.update f s (slUpdate ss m)
+        where slUpdate (s:ss) m = M.update flip s (slUpdate ss m)
               slUpdate [] m     = m
-              f queued          = if queued then Just False else Just True
+              flip queued       = if queued then Just False else Just True
 
 remUser db token = runSqlite db $ deleteBy (UniqueToken token)
 
 remExpiredUsers db time = do
     t <- getCurrentTime
     let expired = posixSecondsToUTCTime $ utcTimeToPOSIXSeconds t - secondsToNominalDiffTime time
-    runSqlite db $ do
-        deleteWhere [UserLastRenew <=. expired, UserQueued ==. True]
+    
+    runSqlite db $ deleteWhere [UserLastRenew <=. expired, UserQueued ==. True]
 
 remUserFromQueue db token = runSqlite (T.pack db) $ do
     user <- selectFirst[UserToken ==. token, UserQueued ==. True][]
@@ -106,7 +109,7 @@ remUserFromQueue db token = runSqlite (T.pack db) $ do
             return True
 
 renewUser db token = runSqlite (T.pack db) $ do
-    user <- selectFirst [UserToken ==. token] []
+    user <- selectFirst [UserToken ==. token, UserQueued ==. True] []
     case user of 
         (Just (Entity userKey _)) -> do
                    t <- liftIO getCurrentTime
@@ -117,6 +120,7 @@ renewUser db token = runSqlite (T.pack db) $ do
 readyToJoin db numPlayers (addr, port) = runSqlite db $ do
     users <- selectList [UserQueued ==. True, UserThreshold >=. numPlayers] []
     let server = T.pack $ addr ++ ":" ++ show port
+
     return $ foldr (isServer server) 0 users
 
     where  
