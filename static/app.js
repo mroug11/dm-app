@@ -6,17 +6,14 @@ import { sendRequest } from "./modules/queue.js";
 
 let LOG = (...args) => {_log(true, ...args)}
 
-let controller = new AbortController();
 let evtSource;
 
 window.addEventListener("DOMContentLoaded", function initPage(event) {
     if (!document.cookie) {
         const id = Math.random().toString(36).substr(2, 9);
         document.cookie="token=" + id + ";max-age=86400";
-        //document.cookie="size=6";
-        //document.cookie="confirm=true";
-        //document.cookie="servers=";
-        //document.cookie="queued=false";
+        localStorage.setItem("players", 6);
+        localStorage.setItem("servers", [""]);
     } else {
         // read settings values from browser cookies
         restoreState();
@@ -35,8 +32,8 @@ window.addEventListener("DOMContentLoaded", function initPage(event) {
 });
 
 function listenInput() {
-    document.getElementById("queue-size").addEventListener("input", newVal => {
-        document.cookie="size=" + newVal.target.value;
+    document.getElementById("queue-size").addEventListener("input", response => {
+        localStorage.setItem("players", response.target.value);
     });
 
     let regionSelect = document.getElementById("settings-region-select").querySelectorAll("button");
@@ -46,28 +43,14 @@ function listenInput() {
 
 function restoreState () {
     // restore region selection
-    if (region()) {
+    if (region()) { 
         const btn = document.querySelector(`div#settings-region-select button[name=${region()}]`);
         btn.setAttribute("disabled","");
         btn.setAttribute("style","cursor:default");
     }
 
-    // restore queue size
-    //document.querySelector("div#settings-queue-size input[name='queue_size']").value = cookieVal("size");
-
-    // restore join behavior // can't be done properly on load/DOMContentLoaded listener?
-    /*var confirm = !!getCkiVal("confirmJoin");
-    console.log(confirm);
-    var radio = document.getElementById("join-behavior");
-    console.log(radio);
-    console.log(radio.join.value);
-    console.log(radio.join[1].checked);
-    if (confirm) {
-        radio.join[0].checked = true;
-    } else {
-        radio.join[0].checked = false;
-        radio.join[1].checked = true;
-    }*/
+    //restore queue size
+    document.querySelector("div#settings-queue-size input[name='queue_size']").value = 4;
 }
 
 function switchStatusPage (region) {
@@ -126,12 +109,8 @@ function fetchServerPool(region) {
 function renderStatusPage (json) {
     LOG("rendering status page with ", json)
 
-    const main = document.getElementById("main-cell-bottom");
-    document.getElementById("main-text-body").innerHTML = "";
-
-    const statusContainer = document.createElement('div');
-    statusContainer.id = "server-status-container";
-    main.appendChild(statusContainer);
+    const statusContainer = document.getElementById("server-status-container");
+    statusContainer.innerHTML = "";
 
     for (var i = 0; i < json.length; i++) {
         const status = document.createElement('div');

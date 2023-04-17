@@ -1,5 +1,10 @@
 # Revision history for erehwn-net
 
+## 0.4.6 -- 2023-04-17
+
+* updated css layout
+* added html doctype, viewport meta and lang attributes for compatibility
+
 ## 0.4.5 -- 2023-04-17
 
 * user post to join and renew queue status works

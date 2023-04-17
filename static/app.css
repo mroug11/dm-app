@@ -95,21 +95,36 @@ body {
     overflow-wrap: break-word;
 }
 
-#main-cell {
-    /*background-color: gainsboro;
-    box-shadow: 0 3px 9px #333;
-    border-top: 1px solid #33333356;
-    padding-top: 1vh;
-    padding-left: 1vw;*/
-    display: block;
-    position: relative;
+.settings { 
+    padding-left: 1vw;
+    padding-right: 3vw;
+    padding-top: 3vh;
+}
 
+#settings-region-select {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 1em;
+}
+
+#settings-region-select button {
+    width: 8em;
+    padding-top: 1em;
+    padding-bottom: 1em;
+    margin-left: 1em;
+
+    box-shadow: 0 1px 5px #311b0b60;
+
+    cursor: pointer;
+    font-size: 1em;
+}
+
+#main-cell {
     grid-row-start: top-main-panel;
     grid-row-end: bottom-main-panel;
 
     grid-column-start: left-main;
     grid-column-end: right-main;
-
 }
 
 #topic-cell {
@@ -119,37 +134,27 @@ body {
     grid-column-start: left-topic;
     grid-column-end: right-topic;
 
-    margin-top: 5vh;
+    padding-top: 5vh;
     text-align: right;
 }
 
 #main-cell nav {
-    top: 0em;
     float: right;
-}
-
-#main-text-body {
-    border-left: 1px solid #e4e1da67;
-    border-right: 1px solid #e4e1da67;
-    
-    /*background-image: linear-gradient(transparent, #f0fff091, transparent);*/
 }
 
 #main-text-body > p {
     font-family: sans-serif;
     color: #222;
 }
-#main-cell-bottom {
-    display: inline-block;
-    margin-top: 2vh;
-}
 
 #server-status-container {
     display: flex;
     flex-flow: row wrap;
+    
     justify-content: center;
     align-items: center;
     align-content: center; /* reduce space between rows */
+
     row-gap: 1em;
     column-gap: 3em;
     height: 100%;
@@ -170,6 +175,7 @@ body {
 
     border-radius: 4px;
 
+    -webkit-user-select:none;
     user-select: none;
     cursor: pointer;
 }   
@@ -234,54 +240,12 @@ body {
     text-decoration: none;
 }
 
-.settings { 
-    padding-left: 1vw;
-    padding-right: 3vw;
-    padding-top: 3vh;
-}
-
-.settings > legend, .settings label {
-    font-family: Arial, Helvetica, sans-serif;
-    font-size: 1em;
-    text-shadow: 1px 1px #1111112a;
-    margin-top: 0.5em;
-    margin-bottom: 0.5em;
-}
-
-#settings-region-select {
-    display: flex;
-    justify-content: space-around;
-    margin-top: 1em;
-}
-
-#settings-region-select button {
-    box-shadow: 0 1px 5px #311b0b60;
-    font-size: 1em;
-    padding-top: 1em;
-    padding-bottom: 1em;
-    cursor: pointer;
-    width: 9em;
-    margin-left: 1em;
-}
-
 #settings-queue-size datalist {
     display: flex;
     justify-content: space-between;
     font-family: 'Quicksand', sans-serif;
     font-size: 1.1em;
     padding-left: 0.3em;
-}
-
-#settings-queue-size input {
-    
-}
-
-.settings-join-behavior {
-    margin-left: 1vw;
-}
-
-.settings-join-behavior input {
-    margin-top: 1.2em;
 }
 
 h1, h2 {
@@ -411,15 +375,6 @@ p {
   input[type=range]:focus::-ms-fill-upper {
     background: #E3E3E3;
   }
-  
-  
-hr {
-    margin-top: 2em;
-    margin-bottom: 2em;
-    border: none;
-    border-top: 3px double #333;
-    color: #333;
-}
 
 div { 
     border: 0px solid; 

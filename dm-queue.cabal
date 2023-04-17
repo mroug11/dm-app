@@ -1,7 +1,7 @@
 cabal-version:      2.4
 
 name:               dm-queue
-version:            0.4.5
+version:            0.4.6
 synopsis:           A web application to queue for TF2 DM servers
 description:        Continuously poll the status of all DM servers for a particular region. 
                     Once a certain number of players have joined a server the user is queuing for, 
