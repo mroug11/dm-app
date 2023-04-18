@@ -2,12 +2,16 @@
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 {-# HLINT ignore "Use <$>" #-}
 {-# HLINT ignore "Use >=>" #-}
+{-# HLINT ignore "Redundant >>" #-}
+{-# HLINT ignore "Use tuple-section" #-}
 
 module Main where
 
-import           Control.Concurrent (forkIO, threadDelay)
+import           Control.Concurrent (forkIO, threadDelay, ThreadId)
 import           Control.Concurrent.Chan
 import           Control.Monad
+
+import qualified Data.ByteString.Lazy as BS (ByteString)
 
 import           Configuration.Utils (runWithConfiguration)
 
@@ -18,43 +22,61 @@ import           Network.Wai.Handler.WarpTLS as WarpTLS (runTLS, tlsSettings, TL
 import           Network.Socket
 
 import           App (api, app, Opts(Opts))
-import           Render (apiToJS)
 import           Settings
-import           Stream (trackServer, sendKeepAlive, listener)
-import qualified Servers (initialize, getAll, Unique(UniqueServer), getAllPair)
-import qualified Users (initialize)
+import qualified Servers as S (initialize)
+import qualified Users as U (initialize)
 
 main :: IO () 
 main = runWithConfiguration runtimeInfo $ \conf -> 
 
     let initialize c =
-            Servers.initialize (_serverlist c) (_dbPath c) >>= \connList ->
-            Users.initialize (_userdb c) connList          >>= \numThreads ->
 
-            --listenC <- Stream.listener
+            S.initialize (_serverlist c) (_dbPath c)    >>= \connList ->
+            U.initialize (_userdb c) connList           >>= \numThreads ->
+            mkUpdateChannel                             >>= \updateChan ->
 
-                {-forM_ uniqueIds $ \(Db.UniqueServer addr port) -> do
-                    trackC <- dupChan listenC
-                    -- track a server in 15 second intervals
-                    forkIO $ trackServer (_dbPath c) addr port (show $ _localport c) 15000000 trackC 
-                    threadDelay (15000000 `div` length uniqueIds)-}
+            forM connList (\conn -> do
+                threadDelay (150000000 `div` numThreads)
+                writer <- dupChan updateChan
+                forkIO . forever $
+                    tracker conn writer 150000000
+            )                                           >>= \threads -> 
+                    
+            return (updateChan, threads)                              
 
-                --let hints = defaultHints { addrFlags = [AI_NUMERICHOST, AI_NUMERICSERV], addrSocketType = Stream }
-                --addr:_ <- getAddrInfo (Just hints) (Just "localhost") (Just  (show $ _port c) )
-                --sock <- socket (addrFamily addr) (addrSocketType addr) (addrProtocol addr)
-                --bind sock (addrAddress addr)
+            where forever :: IO () -> IO ()
+                  forever f = f >> forever f
+                    
+                  mkUpdateChannel :: IO (Chan Update)
+                  mkUpdateChannel = newChan
 
-            return $ Opts (_staticDir c) (_dbPath c) (_userdb c) listenC
+                  tracker conn chan interval =  
+                        fetchStatus conn     >>= \status ->
+                        updateWith status    >>= \diff ->
+                        writeChan chan diff  >>
+                        threadDelay interval 
 
-        run c runOpts = do
-            let serverSettings = setTimeout (60*10) $ setServerName "" $ setPort (_port c) defaultSettings
-            let appSettings = app runOpts
+        run c (chan, threads) = do
 
             (if _isHttps c 
                 then WarpTLS.runTLS (tlsSettings (_cert . _tlsOpts $ c) (_key . _tlsOpts $ c)) 
-                else Warp.runSettings) 
-                    serverSettings appSettings
+                else Warp.runSettings) serverSettings 
+                
+                (app appSettings)
+
+            where serverSettings = setTimeout (60*10) $ 
+                                   setServerName "" $ 
+                                   setPort (_port c) 
+                                   defaultSettings
+
+                  appSettings = Opts (_staticDir c) (_dbPath c) (_userdb c) chan
 
     in E.bracket (initialize conf) {-TODO-}return (run conf)
 
 
+fetchStatus = error "..."
+updateWith = error "..."
+
+data Update = StatusUpdate String 
+            | QueueUpdate String Int 
+            | ServerUpdate String String Int

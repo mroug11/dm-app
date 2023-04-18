@@ -1,7 +1,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-} 
 
-module Settings ( runtimeInfo
+module Settings ( runtimeInfo, AppConf
                 , _dbPath, _serverlist, _staticDir, _port, _interleave
                 , _isHttps, _tlsOpts, _localport, _cert, _key, _userdb ) where
 

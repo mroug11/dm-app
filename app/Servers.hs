@@ -78,8 +78,8 @@ initialize serverlist db
             ss = BS.split 10 sl -- '\n'
             
         in runSqlite (T.pack db) $ do 
-                runMigration migrateAll
-                forM ss $ \s -> f (BS.split 124 s)  -- '|'
+            runMigration migrateAll
+            forM ss $ \s -> f (BS.split 124 s)  -- '|'
     
 initialize _ _ = return $ error "couldn't initialize servers db"
 
