@@ -1,4 +1,4 @@
-Fresh run: cabal new-clean; cabal run erehwn-net -- --config-file "app.conf"
+Fresh run: cabal new-clean; cabal run erehwn-net -- --config-file "app.conf" +RTS -N
 
 For testing HTTPS it's necessary to generate mock key/cert .pem files
 

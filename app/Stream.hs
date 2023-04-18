@@ -5,7 +5,7 @@ import Control.Monad
 import Control.Concurrent.Chan
 import Control.Concurrent (threadDelay)
 
-import Db (updateServer, getRegion)
+import Servers (updateServer, getRegion)
 import App (ServerUpdate(ServerUpdate,ServerUpdateKeepalive))
 import SteamApi (getServerStatus, ServerStatus(ServerStatus))
 

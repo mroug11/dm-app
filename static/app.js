@@ -14,10 +14,10 @@ window.addEventListener("DOMContentLoaded", function initPage(event) {
         document.cookie="token=" + id + ";max-age=86400";
         localStorage.setItem("players", 6);
         localStorage.setItem("servers", [""]);
-    } else {
-        // read settings values from browser cookies
-        restoreState();
     }
+
+    // read settings values from browser cookies
+    restoreState();
 
     // add input listeners
     listenInput();
@@ -50,7 +50,7 @@ function restoreState () {
     }
 
     //restore queue size
-    document.querySelector("div#settings-queue-size input[name='queue_size']").value = 4;
+    document.querySelector("div#settings-queue-size input[name='queue_size']").value = localStorage.getItem("players");
 }
 
 function switchStatusPage (region) {

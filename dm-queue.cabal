@@ -19,7 +19,7 @@ executable erehwn-net
 
     main-is:          Main.hs
     other-modules:    App
-                    , Db
+                    , Servers
                     , Render
                     , SteamApi
                     , Stream

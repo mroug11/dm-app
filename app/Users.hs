@@ -17,37 +17,39 @@ module Users where
 import           Database.Persist
 import           Database.Persist.Sqlite
 import           Database.Persist.TH
+
 import           Data.Time              (UTCTime, getCurrentTime, secondsToNominalDiffTime)
 import           Data.Time.Clock.POSIX
 import qualified Data.Map.Strict as M
 import qualified Data.Text as T
+import qualified Data.ByteString.Lazy as BS 
+
 import           System.Directory       (doesFileExist)
+
 import           Control.Monad.IO.Class (liftIO)
 import           Control.Monad          (unless)
 
 share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
 User
-    token       String           
-    servers     (M.Map T.Text Bool) 
-    threshold   Int                     default=4
-    queued      Bool                    default=false
-    lastRenew   UTCTime
+    token       T.Text           
+    servers     (M.Map BS.ByteString Bool) 
+    threshold   Int                         default=4
+    queued      Bool                        default=false
+    lastRenew   UTCTime                     default=CURRENT_TIME
     UniqueToken token 
     deriving    Show
 |]
 
-initialize db slist = do
-    file <- doesFileExist db
-    unless file $ do
-        migrateUsers db
-        let defaultServerList = zip (flatten slist) (repeat False)
-        runSqlite (T.pack db) $ insert (User "default" (M.fromList defaultServerList) 0 False (posixSecondsToUTCTime 0))
-        return ()
-
-        where flatten ((a,b):xs) = T.pack (a ++ ":" ++ b) : flatten xs 
-              flatten []         = []
-
-migrateUsers db = runSqlite (T.pack db) $ runMigration migrateAll
+initialize :: FilePath -> [BS.ByteString] -> IO Int
+initialize db cl =
+    if doesFileExist db == return True then
+        return $ length cl
+    else runSqlite (T.pack db) $ do 
+        runMigration migrateAll
+        insert (User "default" (M.fromList defaultServerList) 0 False (posixSecondsToUTCTime 0))
+        return $ length cl
+        
+    where defaultServerList = zip cl (repeat False)
 
 isQueued db token = runSqlite db $ do
     user <- selectFirst[UserToken ==. token, UserQueued ==. True][]

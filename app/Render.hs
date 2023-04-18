@@ -53,7 +53,7 @@ main = html_ $
                         a_ [href_ "/dm?region=eu"] $ button_ [type_ "button", name_ "eu"] "Europe"
                         a_ [href_ "/dm?region=na"] $ button_ [type_ "button", name_ "na"] "North America"
             div_ [id_ "main-text-body"] $ do
-                h2_ "Main page" 
+                h2_ "introduction" 
                 p_ "The last few Team Fortress summer events have only been item updates. But this year, we're planning on shipping a full-on holiday-sized update — with items, maps, taunts, unusual effects, war paints, and other community-contributed fixes for the game! Which means we need Steam Workshop content! YOUR Steam Workshop content!"
                 p_ "So get to work! (Or back to work, if you were already working but got distracted when the entire internet simultaneously found out about this state-of-the-art blog-post.) Make sure to get your submissions into the Steam Workshop by May 1st, so they can be considered for this as-yet-unnamed, un-themed, but still very exciting summer-situated (but not summer-themed) (unless you wanted to develop summer-themed stuff) update."
                 p_ "So get to work! (Or back to work, if you were already working but got distracted when the entire internet simultaneously found out about this state-of-the-art blog-post.) Make sure to get your submissions into the Steam Workshop by May 1st, so they can be considered for this as-yet-unnamed, un-themed, but still very exciting summer-situated (but not summer-themed) (unless you wanted to develop summer-themed stuff) update."
@@ -64,6 +64,7 @@ status = html_ $ do
     head_ $ do
         with (script_ "") [ src_ "static/app.js"
                           , type_ "module" 
+                          , defer_ ""
                           ]
     body_ $ do
         div_ [id_ "main-cell", style_ "grid-area: main"] $ do

@@ -11,11 +11,13 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 {-# HLINT ignore "Use head" #-}
+{-# HLINT ignore "Use <&>" #-}
+{-# HLINT ignore "Use >=>" #-}
 
--- | Import as qualified
-module Db ( initialize
+module Servers ( initialize
           , updateServer
           , getAll
           , getAllByRegion
@@ -26,54 +28,63 @@ module Db ( initialize
           , Unique (UniqueServer)
           ) where
     
-import Database.Persist
-import Database.Persist.Sqlite
-import Database.Persist.TH
-import System.Directory (doesFileExist)
-import System.IO (openFile, hGetContents, IOMode (ReadMode))
-import GHC.Generics
-import Control.Monad
-import Control.Monad.IO.Class (liftIO)
-import Data.Text (Text, pack)
-import Data.Time (UTCTime, getCurrentTime, utctDayTime)
-import Data.Time.Format (formatTime, defaultTimeLocale)
+import           Database.Persist
+import           Database.Persist.Sqlite
+import           Database.Persist.TH
 
-import SteamApi (ServerStatus (ServerStatus, ServerStatusLong))
-import Control.Monad.Trans.Reader
-import GHC.IO.Windows.Handle (Io)
+import           System.Directory (doesFileExist)
 
--- | DB contains information about the DM servers. Static info is read from an on-disk file during startup.
+import           GHC.Generics
+import           GHC.IO.Windows.Handle (Io)
+
+import           Control.Monad
+import           Control.Monad.IO.Class (liftIO)
+import           Control.Monad.Trans.Reader
+
+import           Data.Text as T (Text, pack, unpack)
+import           Data.Time (UTCTime, getCurrentTime, utctDayTime)
+import           Data.Time.Format (formatTime, defaultTimeLocale)
+import qualified Data.ByteString.Lazy as BS (split, ByteString, readFile)
+
+import           SteamApi (ServerStatus (ServerStatus, ServerStatusLong))
+
 share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
-Server
-    region String
-    name String
-    address String
-    port String
-    map String default='dummy'
-    players Int default=0
-    capacity Int default=8
-    queued Int default=0
-    started UTCTime default=CURRENT_TIME
-    UniqueServer address port
-    deriving Show Generic
-Players
-    ownerId ServerId
-    name String
-    connected UTCTime default=CURRENT_TIME
-    UniquePlayer name ownerId
+Server json
+    addr         BS.ByteString
+    port         BS.ByteString
+    name         BS.ByteString
+    map          BS.ByteString      default='dummy'
+    players      Int                default=0
+    capacity     Int                default=8
+    queue        Int                default=0
+    start        (Maybe UTCTime)    default=CURRENT_TIME
+    region       BS.ByteString
+    UniqueServer addr port
+
     deriving Show Generic
 |]
 
-splitStr :: Char -> String -> [String]
-splitStr delim str             = splitStr' delim str ""
-splitStr' _ []           right = [right]
-splitStr' delim (l:left) right = if l == delim then right : splitStr' delim left ""
-                                               else splitStr' delim left (right ++ [l])
+initialize _ db
+    | doesFileExist db == return True
+    = runSqlite (T.pack db) $ selectList [][] >>= return . map 
+        (\(Entity _ s) -> serverAddr s <> ":" <> serverPort s)
 
--- | Conditionally initialize db from serversfile
-initialize :: FilePath -> FilePath -> IO ()
-initialize serversFile dbPath = do
-    dbExists <- doesFileExist dbPath
+initialize serverlist db
+    | doesFileExist serverlist == return True
+    = BS.readFile serverlist  >>= \sl ->
+
+        let f [reg, name, addr, port] = do insert $ Server addr port name "" 0 8 0 Nothing reg
+                                           return $ addr <> ":" <> port
+            ss = BS.split 10 sl -- '\n'
+            
+        in runSqlite (T.pack db) $ do 
+                runMigration migrateAll
+                forM ss $ \s -> f (BS.split 124 s)  -- '|'
+    
+initialize _ _ = return $ error "couldn't initialize servers db"
+
+{-
+dbPath
     unless dbExists $ runSqlite (pack dbPath) $ do 
            liftIO $ putStrLn "running migration on new db file"
            runMigration migrateAll
@@ -89,6 +100,14 @@ initialize serversFile dbPath = do
             go t str =  let row = splitStr '|' str
                             (region, name, address, port) = (head row, row !! 1, row !! 2, row !! 3)
                         in Server region name address port "dummy" 0 8 0 t
+
+
+splitStr :: Char -> String -> [String]
+splitStr delim str             = splitStr' delim str ""
+splitStr' _ []           right = [right]
+splitStr' delim (l:left) right = if l == delim then right : splitStr' delim left ""
+                                               else splitStr' delim left (right ++ [l])
+-}
 
 -- | Get a list of all the servers by their unique identifier
 getAll :: FilePath -> IO [Unique Server]
@@ -122,7 +141,7 @@ getAllByRegionParsed db reg = do
     return $ map serverToStatus servers
 
     where serverToStatus :: Server -> ServerStatus
-          serverToStatus s = ServerStatusLong (serverAddress s) (serverPort s) (serverName s) (serverMap s) (serverPlayers s) (serverCapacity s) (serverQueued s) (utcToISO8601 (serverStarted s))
+          serverToStatus s = ServerStatusLong (serverAddress s) (serverPort s) (serverName s) (serverMap s) (serverPlayers s) (serverCapacity s) (serverQueue s) (utcToISO8601 (serverStart s))
 
           utcToISO8601 :: UTCTime -> String
           utcToISO8601 utc = utcToYMD utc ++ "T" ++ utcToHMS utc ++ ".000Z"
@@ -144,16 +163,16 @@ updateServer dbPath address port (ServerStatus map players capacity queue) = run
     let updates = [ map      /= serverMap info
                   , players  /= serverPlayers info
                   , capacity /= serverCapacity info
-                  , queue    /= serverQueued info
+                  , queue    /= serverQueue info
                   ]
 
     when (updates !! 0) $ do 
         liftIO $ print "updating map"
         update id [ServerMap =. map]
         time <- liftIO getCurrentTime
-        update id [ServerStarted =. time]
+        update id [ServerStart =. time]
     when (updates !! 1) $ do update id [ServerPlayers =. players]
     when (updates !! 2) $ do update id [ServerCapacity =. capacity]
-    when (updates !! 3) $ do update id [ServerQueued =. queue]
+    when (updates !! 3) $ do update id [ServerQueue =. queue]
 
     return updates

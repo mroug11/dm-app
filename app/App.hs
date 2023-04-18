@@ -30,13 +30,13 @@ import           Control.Concurrent.Chan
 import           Control.Monad.IO.Class (liftIO)
 import           Lucid (Html, source_)
 
-import qualified Db (getAllByRegion, Server(Server), getAllByRegionParsed)
+import qualified Servers (getAllByRegion, Server(Server), getAllByRegionParsed)
 import qualified Render (header, banner, main, status, HTML)
 import qualified Users as U
 
 data Opts = Opts { static     :: FilePath
-                 , serverdb   :: FilePath
-                 , userdb     :: FilePath
+                 , serverServers   :: FilePath
+                 , userServers     :: FilePath
                  , serverchan :: Chan ServerUpdate
                  }
 
@@ -51,13 +51,13 @@ server opts = status :<|> (join :<|> leave :<|> renew) :<|> graphics
     where 
         join _ Nothing = return False
         join (UserSettings slist threshold queued) (Just c) = liftIO $ do 
-            U.addUserWithSList (userdb opts) (parseCookie c) slist threshold
+            U.addUserWithSList (userServers opts) (parseCookie c) slist threshold
 
         leave Nothing  = return False
-        leave (Just c) = liftIO $ do U.remUserFromQueue (userdb opts) (parseCookie c)
+        leave (Just c) = liftIO $ do U.remUserFromQueue (userServers opts) (parseCookie c)
 
         renew Nothing  = return False
-        renew (Just c) = liftIO $ do U.renewUser (userdb opts) (parseCookie c)
+        renew (Just c) = liftIO $ do U.renewUser (userServers opts) (parseCookie c)
         
         -- | Request correctly sized graphics 
         graphics img width height = return "test"
@@ -65,7 +65,7 @@ server opts = status :<|> (join :<|> leave :<|> renew) :<|> graphics
         -- | Query for server status
         status reg = pool reg :<|> stream reg
             where            
-                pool reg = liftIO $ Db.getAllByRegion (serverdb opts) (regionToString reg)
+                pool reg = liftIO $ Servers.getAllByRegion (serverServers opts) (regionToString reg)
 
                 stream reg = liftIO $ do 
                           dup <- dupChan (serverchan opts)
@@ -80,7 +80,7 @@ server' opts = server opts :<|> (serveDirectoryWebApp (static opts) :<|> (index 
          -- | Serve the static front page
         index = liftIO $ readFile $ static opts ++ "/index.html"
 
-        -- | Send a cacheable web app which provides an interface to query DmServers DB.
+        -- | Send a cacheable web app which provides an interface to query DmServers Servers.
         dm (Just _) = return $ Render.header <> Render.banner <> Render.status
         dm Nothing  = return $ Render.header <> Render.banner <> Render.main
 
@@ -99,7 +99,7 @@ type API' = API :<|> (Static :<|> RootEndpoint)
 type ApiEndpoint = "api" :> -- | Public API endpoint
     (    "status" :> Capture "region" Region :> -- | Query status of all the servers in a region             
          (       
-              "pool" :> Get '[JSON] [Db.Server] -- | Get status of all servers in one lump   
+              "pool" :> Get '[JSON] [Servers.Server] -- | Get status of all servers in one lump   
          :<|> "stream" :> StreamGet NewlineFraming EvStream (SourceIO ServerUpdate) -- | Streaming (partial) server updates
          )
     
@@ -167,13 +167,6 @@ data ServerUpdate   = -- | A partial server update packet identified by address 
      , capacity :: Maybe Int    -- ^ Maximum players
      , queued   :: Maybe Int    -- ^ Players in queue
      }
-        
-instance FromJSON Db.Server
-instance ToJSON   Db.Server where
-    toJSON (Db.Server reg name addr port m p c q t) = 
-        object  [ "addr" .= addr, "port" .= port, "name" .= name, "map" .= m, 
-                  "players" .= p, "capacity" .= c, "queue" .= q, "started" .= t
-                ]
 
 -- | Region type binds the applications query parameter
 data Region = EU | NA | OZ | UNDEF
