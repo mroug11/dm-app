@@ -11,6 +11,7 @@
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE InstanceSigs               #-}
+{-# LANGUAGE LambdaCase #-}
 
 module Users where
     
@@ -32,7 +33,7 @@ import           Control.Monad          (unless)
 share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
 User
     token       T.Text           
-    servers     (M.Map BS.ByteString Bool) 
+    servers     (M.Map T.Text Bool) 
     threshold   Int                         default=4
     queued      Bool                        default=false
     lastRenew   UTCTime                     default=CURRENT_TIME
@@ -40,16 +41,20 @@ User
     deriving    Show
 |]
 
-initialize :: FilePath -> [BS.ByteString] -> IO Int
-initialize db cl =
-    if doesFileExist db == return True then
-        return $ length cl
-    else runSqlite (T.pack db) $ do 
-        runMigration migrateAll
-        insert (User "default" (M.fromList defaultServerList) 0 False (posixSecondsToUTCTime 0))
-        return $ length cl
-        
-    where defaultServerList = zip cl (repeat False)
+initialize :: FilePath -> [(T.Text, T.Text)] -> IO Int
+initialize db cl = 
+    doesFileExist db >>= \case
+    
+        True  -> return $ length cl
+
+        False -> runSqlite (T.pack db) $ do 
+                    runMigration migrateAll
+                    insert (User "default" (M.fromList defaultServerList) 0 False (posixSecondsToUTCTime 0))
+                    return $ length cl
+            
+        where defaultServerList        = zip (flatten cl) (repeat False)
+              flatten ((addr,port):sl) = addr <> ":" <> port : flatten sl
+              flatten []               = []
 
 isQueued db token = runSqlite db $ do
     user <- selectFirst[UserToken ==. token, UserQueued ==. True][]

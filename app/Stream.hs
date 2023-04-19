@@ -1,17 +1,16 @@
 
-module Stream ( listener, trackServer, sendKeepAlive ) where
+module Stream where
 
 import Control.Monad
 import Control.Concurrent.Chan
 import Control.Concurrent (threadDelay)
 
-import Servers (updateServer, getRegion)
 import App (ServerUpdate(ServerUpdate,ServerUpdateKeepalive))
 import SteamApi (getServerStatus, ServerStatus(ServerStatus))
 
 listener :: IO (Chan ServerUpdate)
 listener = newChan
-
+{-
 -- TODO: make tracking interval dynamic depending on number of players
 -- | Query a server for status information in X microsecond intervals
 trackServer ::  String -> -- ^ db path
@@ -47,3 +46,4 @@ sendKeepAlive chan delay = do
     threadDelay delay
     writeChan chan (ServerUpdateKeepalive "")
     sendKeepAlive chan delay
+-}

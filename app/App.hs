@@ -30,14 +30,15 @@ import           Control.Concurrent.Chan
 import           Control.Monad.IO.Class (liftIO)
 import           Lucid (Html, source_)
 
-import qualified Servers (getAllByRegion, Server(Server), getAllByRegionParsed)
+import qualified Servers (Server(Server))
 import qualified Render (header, banner, main, status, HTML)
 import qualified Users as U
+import           Types
 
-data Opts = Opts { static     :: FilePath
-                 , serverServers   :: FilePath
-                 , userServers     :: FilePath
-                 , serverchan :: Chan ServerUpdate
+data Opts = Opts { static   :: FilePath
+                 , serverDb :: FilePath
+                 , userDb   :: FilePath
+                 , updchan  :: Chan Update
                  }
 
 {-| The application is made up of static file-serving endpoints
@@ -51,13 +52,13 @@ server opts = status :<|> (join :<|> leave :<|> renew) :<|> graphics
     where 
         join _ Nothing = return False
         join (UserSettings slist threshold queued) (Just c) = liftIO $ do 
-            U.addUserWithSList (userServers opts) (parseCookie c) slist threshold
+            U.addUserWithSList (userDb opts) (parseCookie c) slist threshold
 
         leave Nothing  = return False
-        leave (Just c) = liftIO $ do U.remUserFromQueue (userServers opts) (parseCookie c)
+        leave (Just c) = liftIO $ do U.remUserFromQueue (userDb opts) (parseCookie c)
 
         renew Nothing  = return False
-        renew (Just c) = liftIO $ do U.renewUser (userServers opts) (parseCookie c)
+        renew (Just c) = liftIO $ do U.renewUser (userDb opts) (parseCookie c)
         
         -- | Request correctly sized graphics 
         graphics img width height = return "test"
@@ -65,10 +66,10 @@ server opts = status :<|> (join :<|> leave :<|> renew) :<|> graphics
         -- | Query for server status
         status reg = pool reg :<|> stream reg
             where            
-                pool reg = liftIO $ Servers.getAllByRegion (serverServers opts) (regionToString reg)
+                pool reg = error "..."--liftIO $ Servers.getAllByRegion (serverDb opts) (regionToString reg)
 
                 stream reg = liftIO $ do 
-                          dup <- dupChan (serverchan opts)
+                          dup <- dupChan (updchan opts)
                           contents <- getChanContents dup
                           return $ source [c | c <- contents, matchRegion c (regionToString reg)]
 

@@ -7,18 +7,22 @@ module SteamApi ( getServerStatus
 
 import Network.Socket
 import Network.Socket.ByteString (recv, sendAll)
+
 import Data.Word (Word8)
 import Data.Char (ord)
-import qualified Data.ByteString as BS (pack,drop,take,ByteString,append,singleton,dropWhile,takeWhile,tail)
-import qualified Data.ByteString.Char8 as C8 (unpack)
+
+import qualified Data.ByteString as BS (ByteString,pack,drop,take,append,singleton)
+import qualified Data.ByteString.Lazy as BL (ByteString, toStrict, fromStrict, dropWhile, tail, takeWhile, drop, take)
+import qualified Data.ByteString.Lazy.Char8 as LC (unpack)
+import qualified Data.Text as T
+
 import qualified Control.Exception as E
 
 data ServerStatus = 
     ServerStatus
-        String -- ^ Map name
+        T.Text -- ^ Map name
         Int    -- ^ Number of players
         Int    -- ^ Max number of players
-        Int    -- ^ Players in queue
     | ServerStatusLong
         String -- ^ Server address
         String -- ^ Server port
@@ -31,24 +35,24 @@ data ServerStatus =
     deriving Eq
 
 -- | Perform a A2S_INFO query for server status
-queryServer :: HostName -> ServiceName -> IO BS.ByteString
+queryServer :: HostName -> ServiceName -> IO BL.ByteString
 queryServer ip port = do
     s <- openConn ip port
     sendAll s a2sInfoReq
-    received <- recv s 4096
+    receivedStrict <- recv s 4096
 
     -- Server can respond with a S2C_CHALLENGE (identified by 'A' == 0x41)
-    if (BS.take 1 . BS.drop 4 $ received) == BS.singleton 0x41 
+    if (BS.take 1 . BS.drop 4 $ receivedStrict) == BS.singleton 0x41 
     then do
         -- append the challenge and send the request again
-        -- note: melkor.tf doesnt seem to respect the challenge properly
-        sendAll s (a2sInfoReq `BS.append` BS.drop 5 received)
-        response <- recv s 4096
+        -- melkor.tf doesnt seem to respect the challenge properly
+        sendAll s (a2sInfoReq `BS.append` BS.drop 5 receivedStrict)
+        responseStrict <- recv s 4096
         close s
-        return response
+        return (BL.fromStrict responseStrict)
     else do
         close s
-        return received
+        return (BL.fromStrict receivedStrict)
 
     where openConn ip port = do
             (addrInfo:_) <- getAddrInfo Nothing (Just ip) (Just port)
@@ -57,15 +61,15 @@ queryServer ip port = do
             return sock
 
 -- | parse the A2S response to a more tractable format
-parseResponse :: BS.ByteString -> ServerStatus
+parseResponse :: BL.ByteString -> ServerStatus
 parseResponse bytes = let 
-        mapName     = C8.unpack . takeUntilNul . dropUntilNul $ bytes -- skip server name, take map name
-        players     = BS.take 2 . BS.drop 2 $ iterate dropUntilNul bytes !! 4
-        curPlayers  = head . C8.unpack . BS.take 1 $ players
-        maxPlayers  = head . C8.unpack . BS.take 1 . BS.drop 1 $ players
-        dropUntilNul = BS.tail . BS.dropWhile (/= 0x0) 
-        takeUntilNul = BS.takeWhile (/= 0x0)
-    in  ServerStatus mapName (ord curPlayers) (ord maxPlayers) 0
+        mapName     = T.pack . LC.unpack . takeUntilNul . dropUntilNul $ bytes -- skip server name, take map name
+        players     = BL.take 2 . BL.drop 2 $ iterate dropUntilNul bytes !! 4
+        curPlayers  = head . LC.unpack . BL.take 1 $ players
+        maxPlayers  = head . LC.unpack . BL.take 1 . BL.drop 1 $ players
+        dropUntilNul = BL.tail . BL.dropWhile (/= 0x0) 
+        takeUntilNul = BL.takeWhile (/= 0x0)
+    in  ServerStatus mapName (ord curPlayers) (ord maxPlayers)
 
 -- | Query a Source server and return the parsed response
 getServerStatus :: HostName -> ServiceName -> IO ServerStatus
@@ -74,7 +78,7 @@ getServerStatus addr port = do
     E.catch (return $ parseResponse a2sInfo) (\e -> do
         let err = show (e :: E.PatternMatchFail)
         print err
-        return (ServerStatus "parsing error" 0 0 0))
+        return $ error "parsing error")
 
 {-| A2S_INFO request: Retrieves information about the Source server including, but not  
     limited to: its name, the map currently being played, and the number of players.

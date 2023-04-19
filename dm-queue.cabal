@@ -26,6 +26,7 @@ executable erehwn-net
                     , Client
                     , Settings
                     , Users
+                    , Types
 
     build-depends:    base >= 4.16 && < 5
                     , text >= 1.2.5
